@@ -1,6 +1,6 @@
 # FishMind
 
-<img src="app-icon.png" alt="FishMind Logo" width="128"/>
+<img src="app-icon.png" alt="FishMind Logo" width="32"/>
 
 FishMind 是一个支持多种人工智能语言模型(LLM)的跨平台桌面客户端，为用户提供丰富的 AI 交互体验。
 
