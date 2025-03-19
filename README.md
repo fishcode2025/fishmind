@@ -6,6 +6,7 @@ FishMind 是一个支持多种人工智能语言模型(LLM)的跨平台桌面客
 
 [![GPL 许可证](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
+![](docs/imgs/2025-03-19-13-39-15.png)
 ## 项目特点
 
 - 支持多种人工智能模型的统一对话界面
