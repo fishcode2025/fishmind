@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "types": ["jest", "node", "jsdom", "@testing-library/jest-dom"],
+    "esModuleInterop": true,
+    "allowJs": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "jest.config.ts"]
+} 
