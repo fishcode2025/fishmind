@@ -8,6 +8,7 @@ import { Box, useTheme } from "@mui/material";
 import UserMessage from "./UserMessage";
 import AIMessage from "./AIMessage";
 import ErrorMessage from "./ErrorMessage";
+import SystemMessage from "./SystemMessage";
 import { alpha } from "@mui/material/styles";
 import { StreamEvent } from "@/services/chat/StreamEventHandler";
 
@@ -154,6 +155,14 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
                   providerId={message.providerId}
                 />
               );
+            case "system":
+              return (
+                <SystemMessage
+                  key={message.id}
+                  content={message.content}
+                  timestamp={message.timestamp}
+                />
+              );
             case "error":
               return (
                 <ErrorMessage
@@ -165,6 +174,7 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
                 />
               );
             default:
+              console.log("未知消息类型:", message.type, message);
               return null;
           }
         })}
