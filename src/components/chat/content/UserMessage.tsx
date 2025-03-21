@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Box, Paper, Typography, alpha, useTheme, IconButton, Tooltip, Divider } from '@mui/material';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -18,55 +18,50 @@ interface UserMessageProps {
   onDelete?: () => void;
 }
 
-const UserMessage: React.FC<UserMessageProps> = ({
-  content,
-  timestamp,
-  tokens = 0,
-  onRegenerate,
-  onEdit,
-  onCopy,
-  onDelete
-}) => {
-  const theme = useTheme();
+const UserMessage = forwardRef<HTMLDivElement, UserMessageProps>(
+  ({ content, timestamp, tokens = 0, onRegenerate, onEdit, onCopy, onDelete }, ref) => {
+    const theme = useTheme();
 
-  // 格式化相对时间
-  const formatRelativeTime = (dateString: string) => {
-    try {
-      if (!dateString) {
-        console.error("日期字符串为空");
-        return "未知时间";
+    // 格式化相对时间
+    const formatRelativeTime = (dateString: string) => {
+      try {
+        if (!dateString) {
+          console.error("日期字符串为空");
+          return "未知时间";
+        }
+
+        const date = new Date(dateString);
+
+        if (isNaN(date.getTime())) {
+          console.error("无效的日期字符串:", dateString);
+          return "无效时间";
+        }
+
+        if (isToday(date)) {
+          return formatDistanceToNow(date, {
+            locale: zhCN,
+            addSuffix: true,
+          });
+        } else if (isYesterday(date)) {
+          return "昨天 " + format(date, "HH:mm", { locale: zhCN });
+        } else {
+          return format(date, "MM月dd日 HH:mm", { locale: zhCN });
+        }
+      } catch (e) {
+        console.error("时间格式化错误:", e);
+        return "时间格式化错误";
       }
+    };
 
-      const date = new Date(dateString);
-
-      if (isNaN(date.getTime())) {
-        console.error("无效的日期字符串:", dateString);
-        return "无效时间";
-      }
-
-      if (isToday(date)) {
-        return formatDistanceToNow(date, {
-          locale: zhCN,
-          addSuffix: true,
-        });
-      } else if (isYesterday(date)) {
-        return "昨天 " + format(date, "HH:mm", { locale: zhCN });
-      } else {
-        return format(date, "MM月dd日 HH:mm", { locale: zhCN });
-      }
-    } catch (e) {
-      console.error("时间格式化错误:", e);
-      return "时间格式化错误";
-    }
-  };
-
-  return (
-    <Box
-
-    >
-
-
-
+    return (
+      <Box
+        ref={ref}
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          // ...原有样式
+        }}
+      >
         <Paper
           elevation={1}
           sx={{
@@ -130,9 +125,9 @@ const UserMessage: React.FC<UserMessageProps> = ({
             {content}
           </Typography>
         </Paper>
-
-    </Box>
-  );
-};
+      </Box>
+    );
+  }
+);
 
 export default UserMessage; 

@@ -258,74 +258,74 @@ const AIMessage = forwardRef<AIMessageRef, AIMessageProps>(
               </Typography>
             ) : (
               <Box
-                // sx={{
-                //   color: "text.primary",
-                //   lineHeight: 1.6,
-                //   wordBreak: "break-word",
-                //   width: "100%",
-                //   display: "block",
-                //   textAlign: "left",
-                //   "& pre": {
-                //     borderRadius: 1,
-                //     p: 1.5,
-                //     overflowX: "auto",
-                //     bgcolor: (theme) =>
-                //       alpha(theme.palette.primary.main, 0.05),
-                //   },
-                //   "& code": {
-                //     fontFamily: "monospace",
-                //     fontSize: "0.9em",
-                //     p: 0.3,
-                //     borderRadius: 0.5,
-                //     bgcolor: (theme) =>
-                //       alpha(theme.palette.primary.main, 0.05),
-                //   },
-                //   "& blockquote": {
-                //     borderLeft: "4px solid",
-                //     borderColor: (theme) =>
-                //       alpha(theme.palette.primary.main, 0.3),
-                //     pl: 2,
-                //     ml: 0,
-                //     my: 1,
-                //     color: "text.secondary",
-                //   },
-                //   "& table": {
-                //     borderCollapse: "collapse",
-                //     width: "100%",
-                //     my: 2,
-                //   },
-                //   "& th, & td": {
-                //     border: "1px solid",
-                //     borderColor: (theme) =>
-                //       alpha(theme.palette.divider, 0.7),
-                //     p: 1,
-                //   },
-                //   "& th": {
-                //     bgcolor: (theme) =>
-                //       alpha(theme.palette.primary.main, 0.05),
-                //     fontWeight: "bold",
-                //   },
-                //   "& img": {
-                //     maxWidth: "100%",
-                //     borderRadius: 1,
-                //   },
-                //   "& a": {
-                //     color: "primary.main",
-                //     textDecoration: "none",
-                //     "&:hover": {
-                //       textDecoration: "underline",
-                //     },
-                //   },
-                //   "& ul, & ol": {
-                //     pl: 3,
-                //   },
-                //   "& hr": {
-                //     border: "none",
-                //     height: "1px",
-                //     bgcolor: "divider",
-                //     my: 2,
-                //   },
-                // }}
+                sx={{
+                  color: "text.primary",
+                  lineHeight: 1.6,
+                  wordBreak: "break-word",
+                  width: "100%",
+                  display: "block",
+                  textAlign: "left",
+                  "& pre": {
+                    borderRadius: 1,
+                    p: 1.5,
+                    overflowX: "auto",
+                    bgcolor: (theme) =>
+                      alpha(theme.palette.primary.main, 0.05),
+                  },
+                  "& code": {
+                    fontFamily: "monospace",
+                    fontSize: "0.9em",
+                    p: 0.3,
+                    borderRadius: 0.5,
+                    bgcolor: (theme) =>
+                      alpha(theme.palette.primary.main, 0.02),
+                  },
+                  "& blockquote": {
+                    borderLeft: "4px solid",
+                    borderColor: (theme) =>
+                      alpha(theme.palette.primary.main, 0.3),
+                    pl: 2,
+                    ml: 0,
+                    my: 1,
+                    color: "text.secondary",
+                  },
+                  "& table": {
+                    borderCollapse: "collapse",
+                    width: "100%",
+                    my: 2,
+                  },
+                  "& th, & td": {
+                    border: "1px solid",
+                    borderColor: (theme) =>
+                      alpha(theme.palette.divider, 0.7),
+                    p: 1,
+                  },
+                  "& th": {
+                    bgcolor: (theme) =>
+                      alpha(theme.palette.primary.main, 0.05),
+                    fontWeight: "bold",
+                  },
+                  "& img": {
+                    maxWidth: "100%",
+                    borderRadius: 1,
+                  },
+                  "& a": {
+                    color: "primary.main",
+                    textDecoration: "none",
+                    "&:hover": {
+                      textDecoration: "underline",
+                    },
+                  },
+                  "& ul, & ol": {
+                    pl: 3,
+                  },
+                  "& hr": {
+                    border: "none",
+                    height: "1px",
+                    bgcolor: "divider",
+                    my: 2,
+                  },
+                }}
               >
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}

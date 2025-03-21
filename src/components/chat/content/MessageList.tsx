@@ -3,6 +3,8 @@ import React, {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useState,
+  useCallback,
 } from "react";
 import { Box, useTheme } from "@mui/material";
 import UserMessage from "./UserMessage";
@@ -40,6 +42,13 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
       Map<string, { handleStreamEvent: (event: StreamEvent) => void }>
     >(new Map());
 
+    // 新增状态用于跟踪占位高度
+    const [placeholderHeight, setPlaceholderHeight] = useState(0);
+    const prevMessagesLength = useRef(messages.length);
+
+    // 新增用户消息追踪逻辑
+    const userMessageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
     // 暴露事件处理方法
     useImperativeHandle(
       ref,
@@ -58,27 +67,41 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
       []
     );
 
-    // 自动滚动到最新消息
+    // 修改滚动逻辑
     useEffect(() => {
-      const scrollToBottom = () => {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-          });
-        }
-      };
+      const container = containerRef.current;
+      if (!container || messages.length === 0) return;
 
-      const observer = new ResizeObserver(scrollToBottom);
-      if (containerRef.current) {
-        observer.observe(containerRef.current);
+      // 获取最新用户消息
+      const lastUserMessage = [...userMessageRefs.current.values()].pop();
+      
+      if (lastUserMessage) {
+        // 计算需要滚动的位置
+        const targetPosition = lastUserMessage.offsetTop - container.offsetTop - 20;
+        const containerHeight = container.clientHeight;
+        const messageHeight = lastUserMessage.clientHeight;
+        
+        // 计算占位高度
+        const placeholderHeight = Math.max(0, containerHeight - messageHeight - 40);
+        
+        // 创建占位元素
+        const placeholder = document.createElement('div');
+        placeholder.style.height = `${placeholderHeight}px`;
+        container.appendChild(placeholder);
+
+        // 执行精准滚动
+        container.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        });
+
+        // 清理占位元素
+        setTimeout(() => {
+          if (placeholder.parentNode === container) {
+            container.removeChild(placeholder);
+          }
+        }, 1000);
       }
-
-      scrollToBottom();
-
-      return () => {
-        observer.disconnect();
-      };
     }, [messages]);
 
     // 确保消息格式正确
@@ -99,30 +122,23 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
         ref={containerRef}
         sx={{
           flexGrow: 1,
-          height: "100%",
-          overflow: "auto",
-          bgcolor:
-            theme.palette.mode === "dark" ? "background.default" : "grey.50",
-          display: "flex",
-          flexDirection: "column",
+          height: '100%',
+          overflow: 'auto',
+          bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+          display: 'flex',
+          flexDirection: 'column',
           px: 2,
           py: 3,
-          scrollBehavior: "smooth",
-          "&::-webkit-scrollbar": {
-            width: "8px",
-            backgroundColor: "transparent",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
-            borderRadius: "4px",
-            "&:hover": {
-              backgroundColor: (theme) =>
-                alpha(theme.palette.primary.main, 0.2),
-            },
-          },
-          "& > *:not(:last-child)": {
+          '& > *:not(:last-child)': {
             mb: 0.5,
           },
+          // 新增动态占位区域
+          '&::after': {
+            content: '""',
+            flex: '1 1 auto',
+            minHeight: 'calc(100vh - 300px)',
+            pointerEvents: 'none'
+          }
         }}
       >
         {formattedMessages.map((message) => {
@@ -132,6 +148,13 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
               return (
                 <UserMessage
                   key={message.id}
+                  ref={(el) => {
+                    if (el) {
+                      userMessageRefs.current.set(message.id, el);
+                    } else {
+                      userMessageRefs.current.delete(message.id);
+                    }
+                  }}
                   content={message.content}
                   timestamp={message.timestamp}
                 />
@@ -178,7 +201,6 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
               return null;
           }
         })}
-        <div ref={messagesEndRef} style={{ height: 1, width: "100%" }} />
       </Box>
     );
   }
