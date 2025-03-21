@@ -208,304 +208,254 @@ const AIMessage = forwardRef<AIMessageRef, AIMessageProps>(
         sx={{
           display: "flex",
           alignItems: "flex-start",
-          opacity: 0,
-          animation: "fadeIn 0.3s ease forwards",
-          "@keyframes fadeIn": {
-            from: { opacity: 0, transform: "translateY(10px)" },
-            to: { opacity: 1, transform: "translateY(0)" },
-          },
+          // opacity: 0,
+          // animation: "fadeIn 0.3s ease forwards",
+          // "@keyframes fadeIn": {
+          //   from: { opacity: 0, transform: "translateY(10px)" },
+          //   to: { opacity: 1, transform: "translateY(0)" },
+          // },
         }}
       >
 
-        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-          {/* 状态指示器 */}
-          {(isActive || isWaiting) && (
-            <Box sx={{ mb: 1 }}>
-              <LinearProgress
+        {/* 状态指示器 */}
+        {(isActive || isWaiting) && (
+          <Box sx={{ mb: 1 }}>
+            <LinearProgress
+              sx={{
+                height: 2,
+                borderRadius: 1,
+              }}
+            />
+          </Box>
+        )}
+
+        <Paper
+          elevation={0}
+          sx={{
+            px: 2,
+            py: 0,
+            border: "none",
+            width: "100%",
+            bgcolor: "transparent",
+          }}
+        >
+
+
+          {/* 消息内容 */}
+          <Collapse in={isExpanded} collapsedSize={100}>
+            {isCode ? (
+              <Typography
                 sx={{
-                  height: 2,
+                  fontFamily: "monospace",
+                  whiteSpace: "pre-wrap",
+                  bgcolor: (theme) =>
+                    alpha(theme.palette.primary.main, 0.03),
+                  p: 1,
                   borderRadius: 1,
                 }}
-              />
-            </Box>
-          )}
+              >
+                {processedContent}
+              </Typography>
+            ) : (
+              <Box
+                // sx={{
+                //   color: "text.primary",
+                //   lineHeight: 1.6,
+                //   wordBreak: "break-word",
+                //   width: "100%",
+                //   display: "block",
+                //   textAlign: "left",
+                //   "& pre": {
+                //     borderRadius: 1,
+                //     p: 1.5,
+                //     overflowX: "auto",
+                //     bgcolor: (theme) =>
+                //       alpha(theme.palette.primary.main, 0.05),
+                //   },
+                //   "& code": {
+                //     fontFamily: "monospace",
+                //     fontSize: "0.9em",
+                //     p: 0.3,
+                //     borderRadius: 0.5,
+                //     bgcolor: (theme) =>
+                //       alpha(theme.palette.primary.main, 0.05),
+                //   },
+                //   "& blockquote": {
+                //     borderLeft: "4px solid",
+                //     borderColor: (theme) =>
+                //       alpha(theme.palette.primary.main, 0.3),
+                //     pl: 2,
+                //     ml: 0,
+                //     my: 1,
+                //     color: "text.secondary",
+                //   },
+                //   "& table": {
+                //     borderCollapse: "collapse",
+                //     width: "100%",
+                //     my: 2,
+                //   },
+                //   "& th, & td": {
+                //     border: "1px solid",
+                //     borderColor: (theme) =>
+                //       alpha(theme.palette.divider, 0.7),
+                //     p: 1,
+                //   },
+                //   "& th": {
+                //     bgcolor: (theme) =>
+                //       alpha(theme.palette.primary.main, 0.05),
+                //     fontWeight: "bold",
+                //   },
+                //   "& img": {
+                //     maxWidth: "100%",
+                //     borderRadius: 1,
+                //   },
+                //   "& a": {
+                //     color: "primary.main",
+                //     textDecoration: "none",
+                //     "&:hover": {
+                //       textDecoration: "underline",
+                //     },
+                //   },
+                //   "& ul, & ol": {
+                //     pl: 3,
+                //   },
+                //   "& hr": {
+                //     border: "none",
+                //     height: "1px",
+                //     bgcolor: "divider",
+                //     my: 2,
+                //   },
+                // }}
+              >
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex]}
+                  components={{
+                    code: ({ className, children, ...props }: any) => {
+                      const match = /language-(\w+)/.exec(className || "");
+                      const isInline = !match;
+                      return !isInline ? (
+                        <SyntaxHighlighter
+                          // @ts-ignore
+                          style={materialLight}
+                          language={match ? match[1] : ""}
+                          PreTag="div"
+                          {...props}
+                        >
+                          {String(children).replace(/\n$/, "")}
+                        </SyntaxHighlighter>
+                      ) : (
+                        <code className={className} {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                  }}
+                >
+                  {processedContent}
+                </ReactMarkdown>
+              </Box>
+            )}
+          </Collapse>
 
-          <Paper
-            elevation={1}
+          {/* 操作按钮 */}
+          <Box
             sx={{
-              p: 2,
-              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
-              borderRadius: "2px 6px 6px 6px",
-              transition: "all 0.2s ease",
-              minWidth: 0,
-              flexGrow: 1,
-              "&:hover": {
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                transform: "scale(1.01)",
-              },
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              // mt: 1,
+              gap: 1,
             }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                width: "100%",
-              }}
-            >
-              {/* 时间戳和状态 */}
-              <Box
+            {/* 展开/折叠按钮 */}
+            {/* <Tooltip title={isExpanded ? "折叠" : "展开"} placement="top">
+              <IconButton
+                size="small"
+                onClick={handleToggleExpand}
                 sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 1,
-                  width: "100%",
-                  pb: 0.5,
-                  borderBottom: "1px dashed rgba(0, 0, 0, 0.1)",
+                  color: "text.secondary",
+                  opacity: 0.6,
+                  "&:hover": {
+                    opacity: 1,
+                  },
                 }}
               >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "text.secondary",
-                    opacity: 0.6,
-                    fontSize: "0.7rem",
-                    textAlign: "left",
-                  }}
-                >
-                  {formattedTime}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "text.secondary",
-                    opacity: 0.6,
-                    fontSize: "0.7rem",
-                    ml: 1.5,
-                    textAlign: "right",
-                  }}
-                >
-                  {relativeTime}
-                </Typography>
-              </Box>
+                {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Tooltip> */}
 
-              {/* 消息内容 */}
-              <Collapse in={isExpanded} collapsedSize={100}>
-                {isCode ? (
-                  <Typography
-                    sx={{
-                      fontFamily: "monospace",
-                      whiteSpace: "pre-wrap",
-                      bgcolor: (theme) =>
-                        alpha(theme.palette.primary.main, 0.03),
-                      p: 1,
-                      borderRadius: 1,
-                    }}
-                  >
-                    {processedContent}
-                  </Typography>
+            {/* 复制按钮 */}
+            {/* <Tooltip title={isCopied ? "已复制" : "复制"} placement="top">
+              <IconButton
+                size="small"
+                onClick={handleCopy}
+                sx={{
+                  color: "text.secondary",
+                  opacity: 0.6,
+                  "&:hover": {
+                    opacity: 1,
+                  },
+                }}
+              >
+                {isCopied ? (
+                  <CheckCircleOutlineIcon color="success" />
                 ) : (
-                  <Box
-                    sx={{
-                      color: "text.primary",
-                      lineHeight: 1.6,
-                      wordBreak: "break-word",
-                      width: "100%",
-                      display: "block",
-                      textAlign: "left",
-                      "& pre": {
-                        borderRadius: 1,
-                        p: 1.5,
-                        overflowX: "auto",
-                        bgcolor: (theme) =>
-                          alpha(theme.palette.primary.main, 0.05),
-                      },
-                      "& code": {
-                        fontFamily: "monospace",
-                        fontSize: "0.9em",
-                        p: 0.3,
-                        borderRadius: 0.5,
-                        bgcolor: (theme) =>
-                          alpha(theme.palette.primary.main, 0.05),
-                      },
-                      "& blockquote": {
-                        borderLeft: "4px solid",
-                        borderColor: (theme) =>
-                          alpha(theme.palette.primary.main, 0.3),
-                        pl: 2,
-                        ml: 0,
-                        my: 1,
-                        color: "text.secondary",
-                      },
-                      "& table": {
-                        borderCollapse: "collapse",
-                        width: "100%",
-                        my: 2,
-                      },
-                      "& th, & td": {
-                        border: "1px solid",
-                        borderColor: (theme) =>
-                          alpha(theme.palette.divider, 0.7),
-                        p: 1,
-                      },
-                      "& th": {
-                        bgcolor: (theme) =>
-                          alpha(theme.palette.primary.main, 0.05),
-                        fontWeight: "bold",
-                      },
-                      "& img": {
-                        maxWidth: "100%",
-                        borderRadius: 1,
-                      },
-                      "& a": {
-                        color: "primary.main",
-                        textDecoration: "none",
-                        "&:hover": {
-                          textDecoration: "underline",
-                        },
-                      },
-                      "& ul, & ol": {
-                        pl: 3,
-                      },
-                      "& hr": {
-                        border: "none",
-                        height: "1px",
-                        bgcolor: "divider",
-                        my: 2,
-                      },
-                    }}
-                  >
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex]}
-                      components={{
-                        code: ({ className, children, ...props }: any) => {
-                          const match = /language-(\w+)/.exec(className || "");
-                          const isInline = !match;
-                          return !isInline ? (
-                            <SyntaxHighlighter
-                              // @ts-ignore
-                              style={materialLight}
-                              language={match ? match[1] : ""}
-                              PreTag="div"
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, "")}
-                            </SyntaxHighlighter>
-                          ) : (
-                            <code className={className} {...props}>
-                              {children}
-                            </code>
-                          );
-                        },
-                      }}
-                    >
-                      {processedContent}
-                    </ReactMarkdown>
-                  </Box>
+                  <ContentCopyIcon />
                 )}
-              </Collapse>
+              </IconButton>
+            </Tooltip> */}
 
-              {/* 操作按钮 */}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  alignItems: "center",
-                  mt: 1,
-                  gap: 1,
-                }}
-              >
-                {/* 展开/折叠按钮 */}
-                <Tooltip title={isExpanded ? "折叠" : "展开"} placement="top">
-                  <IconButton
-                    size="small"
-                    onClick={handleToggleExpand}
-                    sx={{
-                      color: "text.secondary",
-                      opacity: 0.6,
-                      "&:hover": {
-                        opacity: 1,
-                      },
-                    }}
-                  >
-                    {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  </IconButton>
-                </Tooltip>
+            {/* 重新生成按钮 */}
+            {onRegenerate && (
+              <Tooltip title="重新生成" placement="top">
+                <IconButton
+                  size="small"
+                  onClick={handleRegenerate}
+                  disabled={isActive}
+                  sx={{
+                    color: "text.secondary",
+                    opacity: 0.6,
+                    "&:hover": {
+                      opacity: 1,
+                    },
+                  }}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            )}
 
-                {/* 复制按钮 */}
-                <Tooltip title={isCopied ? "已复制" : "复制"} placement="top">
-                  <IconButton
-                    size="small"
-                    onClick={handleCopy}
-                    sx={{
-                      color: "text.secondary",
-                      opacity: 0.6,
-                      "&:hover": {
-                        opacity: 1,
-                      },
-                    }}
-                  >
-                    {isCopied ? (
-                      <CheckCircleOutlineIcon color="success" />
-                    ) : (
-                      <ContentCopyIcon />
-                    )}
-                  </IconButton>
-                </Tooltip>
-
-                {/* 重新生成按钮 */}
-                {onRegenerate && (
-                  <Tooltip title="重新生成" placement="top">
-                    <IconButton
-                      size="small"
-                      onClick={handleRegenerate}
-                      disabled={isActive}
-                      sx={{
-                        color: "text.secondary",
-                        opacity: 0.6,
-                        "&:hover": {
-                          opacity: 1,
-                        },
-                      }}
-                    >
-                      <RefreshIcon />
-                    </IconButton>
-                  </Tooltip>
-                )}
-
-                {/* 状态指示器 */}
-                {isActive && (
-                  <Chip
-                    size="small"
-                    icon={<AutorenewIcon />}
-                    label="生成中"
-                    color="primary"
-                    variant="outlined"
-                  />
-                )}
-                {isWaiting && (
-                  <Chip
-                    size="small"
-                    icon={<PsychologyIcon />}
-                    label="思考中"
-                    color="primary"
-                    variant="outlined"
-                  />
-                )}
-                {isError && (
-                  <Chip
-                    size="small"
-                    icon={<ErrorOutlineIcon />}
-                    label="出错了"
-                    color="error"
-                    variant="outlined"
-                  />
-                )}
-              </Box>
-            </Box>
-          </Paper>
-        </Box>
+            {/* 状态指示器 */}
+            {isActive && (
+              <Chip
+                size="small"
+                icon={<AutorenewIcon />}
+                label="生成中"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {isWaiting && (
+              <Chip
+                size="small"
+                icon={<PsychologyIcon />}
+                label="思考中"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {isError && (
+              <Chip
+                size="small"
+                icon={<ErrorOutlineIcon />}
+                label="出错了"
+                color="error"
+                variant="outlined"
+              />
+            )}
+          </Box>
+        </Paper>
       </Box>
     );
   }

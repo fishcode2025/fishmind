@@ -62,42 +62,24 @@ const UserMessage: React.FC<UserMessageProps> = ({
 
   return (
     <Box
-      sx={{
-        alignSelf: 'flex-end',
-        maxWidth: '85%',
-        minWidth: '85%',
-        mb: 2,
-        opacity: 0,
-        animation: 'fadeIn 0.3s ease forwards',
-        '@keyframes fadeIn': {
-          from: { opacity: 0, transform: 'translateY(10px)' },
-          to: { opacity: 1, transform: 'translateY(0)' }
-        }
-      }}
+
     >
 
-      <Box sx={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        flexDirection: 'row-reverse',
-        '& > :first-of-type': {
-          flexShrink: 0
-        }
-      }}>
+
 
         <Paper
           elevation={1}
           sx={{
             p: 2,
             bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
-            borderRadius: '6px 2px 6px 6px',
-            transition: 'all 0.2s ease',
+            // borderRadius: '6px 2px 6px 6px',
+            // transition: 'all 0.2s ease',
             minWidth: 0,
             flexGrow: 1,
-            '&:hover': {
-              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-              transform: 'scale(1.01)'
-            }
+            // '&:hover': {
+            //   bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+            //   transform: 'scale(1.01)'
+            // }
           }}
         >
           <Box
@@ -140,7 +122,7 @@ const UserMessage: React.FC<UserMessageProps> = ({
             sx={{
               whiteSpace: 'pre-wrap',
               color: 'text.primary',
-              textAlign: 'right',
+              textAlign: 'left',
               width: '100%',
               display: 'block'
             }}
@@ -148,64 +130,7 @@ const UserMessage: React.FC<UserMessageProps> = ({
             {content}
           </Typography>
         </Paper>
-      </Box>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          mt: 0.5,
-          mr: 7,
-          ml: 'auto',
-          width: 'calc(100% - 48px)'
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 0.5,
-            flexGrow: 1,
-            '.MuiIconButton-root': {
-              p: 0.5,
-              '&:hover': {
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08)
-              }
-            }
-          }}
-        >
-          <Tooltip title="重新生成">
-            <IconButton size="small" onClick={onRegenerate}>
-              <RefreshIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="编辑">
-            <IconButton size="small" onClick={onEdit}>
-              <EditIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="复制">
-            <IconButton size="small" onClick={onCopy}>
-              <ContentCopyIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="删除">
-            <IconButton size="small" onClick={onDelete}>
-              <DeleteOutlineIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
-        </Box>
-        <Typography
-          variant="caption"
-          sx={{
-            color: 'text.secondary',
-            opacity: 0.6,
-            fontSize: '0.7rem',
-            flexShrink: 0
-          }}
-        >
-          Tokens: {tokens}
-        </Typography>
-      </Box>
+
     </Box>
   );
 };

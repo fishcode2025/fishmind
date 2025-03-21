@@ -121,7 +121,7 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
             },
           },
           "& > *:not(:last-child)": {
-            mb: 3,
+            mb: 0.5,
           },
         }}
       >
