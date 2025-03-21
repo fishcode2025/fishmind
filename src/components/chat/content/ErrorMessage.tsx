@@ -123,7 +123,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ error, timestamp, modelId, 
               }}
             >
               <ErrorOutlineIcon sx={{ fontSize: 16 }} />
-              {error.message || '发生错误，请稍后重试'}
+              {/* {error.content || '发生错误，请稍后重试'} */}
             </Typography>
           </Paper>
         </Box>

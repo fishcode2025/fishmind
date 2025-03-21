@@ -13,8 +13,8 @@ import { StreamEvent } from "@/services/chat/StreamEventHandler";
 
 interface Message {
   id: string;
-  type: "user" | "ai" | "error";
-  role?: "user" | "assistant" | "system";
+  type: "user" | "ai" | "error" | "system";
+  role?: "user" | "assistant" | "system" | "error";
   content: string;
   timestamp: string;
   error?: any;
@@ -82,23 +82,15 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
 
     // 确保消息格式正确
     const formattedMessages = messages.map((message) => {
-      const type =
-        message.role === "user"
-          ? "user"
-          : message.role === "assistant"
-          ? "ai"
-          : message.error
-          ? "error"
-          : "ai";
-
       return {
         ...message,
-        type,
         id: message.id || Date.now().toString(),
         timestamp: message.timestamp || new Date().toISOString(),
       };
     });
-
+    // 在formattedMessages之后添加：
+    // console.log("处理前的消息:", messages);
+    // console.log("处理后的消息:", formattedMessages);
     // console.log("MessageList rendering messages:", messages);
 
     return (

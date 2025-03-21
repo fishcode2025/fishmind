@@ -216,40 +216,6 @@ const AIMessage = forwardRef<AIMessageRef, AIMessageProps>(
           },
         }}
       >
-        <Box
-          sx={{
-            width: 36,
-            height: 36,
-            borderRadius: 1.5,
-            overflow: "hidden",
-            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            mr: 1.5,
-            boxShadow: 1,
-            transition: "transform 0.2s ease",
-            "&:hover": {
-              transform: "scale(1.1)",
-            },
-          }}
-        >
-          {modelIcon ? (
-            <Avatar
-              src={modelIcon.id}
-              alt={modelIcon.name}
-              sx={{ width: 24, height: 24 }}
-            />
-          ) : (
-            <SmartToyOutlinedIcon
-              sx={{
-                width: 24,
-                height: 24,
-                color: "primary.main",
-              }}
-            />
-          )}
-        </Box>
 
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
           {/* 状态指示器 */}

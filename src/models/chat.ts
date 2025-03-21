@@ -29,7 +29,7 @@ export interface Topic {
 export interface Message {
   id: string;
   topicId: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'error';
   content: string;
   timestamp: string;
   modelId?: string;

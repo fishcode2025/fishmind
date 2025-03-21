@@ -22,7 +22,7 @@ interface ChatContentProps {
   currentTopicId?: string;
 }
 
-type MessageType = "user" | "ai" | "error";
+type MessageType = "user" | "ai" | "error" | "system";
 
 interface FormattedMessage {
   id: string;
@@ -81,7 +81,15 @@ const ChatContent = forwardRef<ChatContentRef, ChatContentProps>(
           modelId: message.modelId,
           providerId: message.providerId,
         };
-      } else {
+      } else if (message.role === "system") {
+        return {
+          id: message.id,
+          type: "system",
+          content: message.content,
+          timestamp: message.timestamp,
+        };
+      }
+      else {
         return {
           id: message.id,
           type: "error",

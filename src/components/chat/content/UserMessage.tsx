@@ -84,32 +84,7 @@ const UserMessage: React.FC<UserMessageProps> = ({
           flexShrink: 0
         }
       }}>
-        <Box
-          sx={{
-            width: 36,
-            height: 36,
-            borderRadius: 1.5,
-            overflow: "hidden",
-            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            ml: 1.5,
-            boxShadow: 1,
-            transition: 'transform 0.2s ease',
-            '&:hover': {
-              transform: 'scale(1.1)'
-            },
-          }}
-        >
-          <PersonOutlineIcon
-            sx={{
-              width: 24,
-              height: 24,
-              color: "primary.main",
-            }}
-          />
-        </Box>
+ 
         <Paper
           elevation={1}
           sx={{
