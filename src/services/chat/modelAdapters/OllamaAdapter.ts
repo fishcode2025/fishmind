@@ -75,6 +75,18 @@ export class OllamaAdapter implements IModelAdapter {
     args: any,
     result: any
   ): any[] {
+    console.log(`OllamaAdapter.formatToolCallResult 被调用:`);
+    console.log(`工具名称: ${toolName}`);
+    console.log(`工具调用ID: ${toolCallId}`);
+    console.log(`参数: ${typeof args === 'string' ? args : JSON.stringify(args)}`);
+    console.log(`结果: ${typeof result === 'string' ? result : JSON.stringify(result)}`);
+    
+    // 格式化参数为字符串
+    const argsStr = typeof args === "string" ? args : JSON.stringify(args);
+    
+    // 格式化结果为字符串
+    const resultStr = typeof result === "string" ? result : JSON.stringify(result);
+
     return [
       {
         role: "assistant",
@@ -83,7 +95,7 @@ export class OllamaAdapter implements IModelAdapter {
             id: toolCallId,
             type: "function",
             function: {
-              arguments: args, // Ollama 工具参数不是字符串
+              arguments: argsStr,
               name: toolName,
             },
           },
@@ -92,7 +104,7 @@ export class OllamaAdapter implements IModelAdapter {
       {
         role: "tool",
         name: toolName,
-        content: typeof result === "string" ? result : result.content,
+        content: resultStr,
         tool_call_id: toolCallId,
       },
     ];
@@ -317,41 +329,113 @@ export class OllamaAdapter implements IModelAdapter {
    */
   private formatToolCalls(toolCalls: any[]): any[] {
     if (!toolCalls || !Array.isArray(toolCalls)) {
+      console.log(`formatToolCalls: 输入不是数组`);
       return [];
     }
     
+    console.log(`formatToolCalls: 输入数组长度 ${toolCalls.length}`);
+    console.log(`工具调用输入: ${JSON.stringify(toolCalls)}`);
+    
     return toolCalls
-      .map((toolCall: any) => {
+      .map((toolCall: any, index: number) => {
+        console.log(`处理工具调用 #${index+1}:`, JSON.stringify(toolCall));
+        
         // 处理标准OpenAI格式的工具调用
         if (toolCall.type === "function" && toolCall.function) {
           let args = toolCall.function.arguments;
           
-          // 尝试解析参数字符串为对象
-          if (typeof args === "string") {
+          // 记录原始参数
+          console.log(`工具参数原始值: ${typeof args === 'string' ? `"${args}"` : JSON.stringify(args)}`);
+          
+          // 特殊处理: 当参数是字符串"[object Object]"时，将其替换为空对象
+          if (args === "[object Object]") {
+            console.log(`检测到特殊字符串"[object Object]"，替换为空对象`);
+            args = "{}";
+          }
+          // 确保参数是字符串格式
+          else if (typeof args === "string" && args.trim()) {
+            // 验证是否为有效的JSON字符串
             try {
-              args = JSON.parse(args);
-            } catch (error) {
-              console.warn("无法解析工具调用参数为JSON对象:", error);
-              // 如果无法解析，保持字符串格式
+              // 先解析检查有效性，然后重新转回字符串以确保格式统一
+              const parsedArgs = JSON.parse(args);
+              args = JSON.stringify(parsedArgs);
+              console.log(`参数验证成功: ${args}`);
+            } catch (error: any) {
+              console.warn(`无法解析工具调用参数为JSON对象: "${args}"，错误: ${error?.message || "未知错误"}`);
+              // 如果无法解析但看起来像对象字符串，则尝试其他方法
+              if (args.includes('{') && args.includes('}')) {
+                try {
+                  // 尝试使用Function构造函数安全地解析
+                  const cleanArgs = args.replace(/[\r\n]/g, ' ').trim();
+                  const parsedArgs = (new Function(`return ${cleanArgs}`))();
+                  args = JSON.stringify(parsedArgs);
+                  console.log(`使用替代方法解析成功: ${args}`);
+                } catch (e: any) {
+                  console.warn(`替代解析方法也失败: ${e?.message || "未知错误"}`);
+                  // 最终回退到空对象
+                  args = "{}";
+                }
+              } else {
+                // 不像对象的字符串，使用空对象
+                args = "{}";
+              }
             }
+          } else if (typeof args !== "string") {
+            // 非字符串参数转换为字符串
+            console.log(`将非字符串参数转换为字符串: ${JSON.stringify(args)}`);
+            args = typeof args === "object" ? JSON.stringify(args) : "{}";
+          } else {
+            // 空字符串或其他情况，使用空对象
+            console.log(`参数为空，使用空对象字符串`);
+            args = "{}";
           }
           
           return {
-            id: toolCall.id || `ollama-tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: toolCall.id || `ollama-tool-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
             name: toolCall.function.name,
             args: args
           };
         }
         
-        // 处理简单的工具调用格式
+        // 直接包含name和args的简单格式
         if (toolCall.name) {
+          let args = toolCall.arguments || toolCall.args || {};
+          
+          // 特殊处理: 当参数是字符串"[object Object]"时
+          if (args === "[object Object]") {
+            console.log(`检测到简单格式中的特殊字符串"[object Object]"，替换为空对象字符串`);
+            args = "{}";
+          }
+          // 确保参数是字符串格式
+          else if (typeof args !== "string") {
+            console.log(`将简单格式非字符串参数转换为字符串: ${JSON.stringify(args)}`);
+            args = typeof args === "object" ? JSON.stringify(args) : "{}";
+          }
+          // 尝试验证字符串格式
+          else if (typeof args === "string" && args.trim()) {
+            try {
+              // 先解析检查有效性，然后重新转回字符串以确保格式统一
+              const parsedArgs = JSON.parse(args);
+              args = JSON.stringify(parsedArgs);
+              console.log(`简单格式参数验证成功: ${args}`);
+            } catch (error: any) {
+              console.warn(`无法解析简单格式工具调用参数为JSON对象: "${args}"，错误: ${error?.message || "未知错误"}`);
+              // 如果无法解析，使用空对象
+              args = "{}";
+            }
+          } else {
+            // 空字符串情况
+            args = "{}";
+          }
+          
           return {
-            id: toolCall.id || `ollama-tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: toolCall.id || `ollama-tool-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
             name: toolCall.name,
-            args: toolCall.arguments || toolCall.args || {}
+            args: args
           };
         }
         
+        console.log(`无法识别的工具调用格式: ${JSON.stringify(toolCall)}`);
         return null;
       })
       .filter(Boolean);
@@ -670,26 +754,94 @@ export class OllamaAdapter implements IModelAdapter {
     try {
       const parsed = JSON.parse(dataString);
       
+      // 记录原始响应数据，便于调试
+      console.log(`Ollama原始响应: ${JSON.stringify(parsed, null, 2)}`);
+      
       // 处理Ollama特有的响应格式
       if (parsed.message) {
+        // 检查是否有工具调用
+        const hasTool = parsed.message.tool_calls && 
+                       Array.isArray(parsed.message.tool_calls) && 
+                       parsed.message.tool_calls.length > 0;
+        
+        // 确定finish_reason
+        let finishReason = null;
+        
+        // 当message.tool_calls有数据且done=false时，设置finish_reason为"tool_calls"
+        if (hasTool && !parsed.done) {
+          finishReason = "tool_calls";
+        } 
+        // 当done_reason="stop"且done=true时，设置finish_reason为"stop"
+        else if (parsed.done_reason === "stop" && parsed.done) {
+          finishReason = "stop";
+        }
+        // 其他情况下的默认处理
+        else if (parsed.done) {
+          finishReason = parsed.done_reason || "stop";
+        }
+        
         // 将Ollama格式转换为OpenAI格式以保持一致性
-        return {
+        const result = {
           choices: [
             {
               delta: {
                 content: parsed.message.content || "",
                 role: parsed.message.role || "assistant",
-                // 处理工具调用
-                tool_calls: parsed.message.tool_calls
               },
               index: 0,
-              finish_reason: parsed.done ? "stop" : null
+              finish_reason: finishReason
             }
           ],
           model: parsed.model || "",
           created: Date.now(),
           done: parsed.done || false
         };
+        
+        // 如果有工具调用，添加到delta中
+        if (hasTool) {
+          console.log(`检测到Ollama工具调用: ${JSON.stringify(parsed.message.tool_calls)}`);
+          // @ts-ignore - 添加工具调用
+          result.choices[0].delta.tool_calls = parsed.message.tool_calls.map(toolCall => {
+            // 格式化参数为字符串
+            let args = toolCall.function.arguments;
+            
+            // 确保参数是字符串格式
+            if (args === "[object Object]") {
+              args = "{}";
+            } else if (typeof args !== "string") {
+              args = typeof args === "object" ? JSON.stringify(args) : "{}";
+            } else if (args === undefined || args === null || args === "") {
+              args = "{}";
+            } else {
+              // 验证JSON字符串格式
+              try {
+                const parsedArgs = JSON.parse(args);
+                args = JSON.stringify(parsedArgs);
+              } catch {
+                // 如果无法解析，使用原始字符串或空对象
+                if (!args.trim()) {
+                  args = "{}";
+                }
+              }
+            }
+            
+            // 确保工具调用有正确的格式
+            return {
+              id: toolCall.id || `ollama-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+              type: "function",
+              function: {
+                name: toolCall.function.name,
+                arguments: args
+              }
+            };
+          });
+          
+          // 为确保系统内部处理，设置顶级tool_calls属性
+          // @ts-ignore
+          result.tool_calls = result.choices[0].delta.tool_calls;
+        }
+        
+        return result;
       }
       
       return parsed;
