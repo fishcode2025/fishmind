@@ -1023,7 +1023,7 @@ export class ChatService implements IChatService {
         method: "POST",
         headers,
         body: JSON.stringify(
-          modelAdapter.buildRequestBody(requestMessages, responseContext, tools)
+          modelAdapter.buildRequestBody(requestMessages, responseContext, currentModel.provider, currentModel.model, tools)
         ),
       });
 
@@ -2803,7 +2803,9 @@ export class ChatService implements IChatService {
       const requestBody = modelAdapter.buildRequestBody(
         newMessages,
         this.modelResponseContexts.get(messageId) ??
-          new ModelResponseContext(messageId)
+          new ModelResponseContext(messageId),
+        currentModel.provider,
+        currentModel.model
       );
 
       // 4. 发送等待事件

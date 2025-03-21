@@ -1,6 +1,7 @@
 import { IModelAdapter } from "./IModelAdapter";
 import { IMcpTool } from "../mcpToolHandler";
 import { ModelResponseContext } from "../ModelResponseContext";
+import { AiModel, AiModelProvider } from "../../../models/chat";
 
 /**
  * OpenAI 模型适配器
@@ -525,10 +526,12 @@ export class OpenAIAdapter implements IModelAdapter {
   buildRequestBody(
     messages: any[],
     responseContext: ModelResponseContext,
+    provider: AiModelProvider,
+    model: AiModel,
     tools?: any[]
   ): any {
     // 4. 从responseContext中补充缺失的信息
-    const model = responseContext.getMetadata("name");
+    const modelId = model?.modelId || responseContext.getMetadata("name");
 
     const tempValue = responseContext.getMetadata("temperature");
     const temperature = tempValue ? parseFloat(tempValue) : 0.7;
@@ -540,13 +543,13 @@ export class OpenAIAdapter implements IModelAdapter {
     const stream = streamValue !== "false";
 
     // 5. 检查是否有模型ID
-    if (!model) {
+    if (!modelId) {
       console.error("错误: buildRequestBody 中未提供模型ID");
       throw new Error("模型ID是必需的，请在消息或响应上下文中提供");
     }
 
     console.log(
-      `构建请求体，使用模型: ${model}, 温度: ${temperature}, 最大令牌数: ${maxTokens}, 流式: ${stream}`
+      `构建请求体，使用模型: ${modelId}, 温度: ${temperature}, 最大令牌数: ${maxTokens}, 流式: ${stream}`
     );
 
     // 6. 清理消息中的内部字段
@@ -558,7 +561,7 @@ export class OpenAIAdapter implements IModelAdapter {
 
     return this.prepareRequestBody(
       cleanedMessages,
-      model,
+      modelId,
       temperature || 0.7,
       maxTokens || 2048,
       tools,

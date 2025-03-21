@@ -1,6 +1,7 @@
 import { IModelAdapter } from "./IModelAdapter";
 import { IMcpTool } from "../mcpToolHandler";
 import { ModelResponseContext } from "../ModelResponseContext";
+import { AiModel, AiModelProvider } from "../../../models/chat";
 
 /**
  * Anthropic 模型适配器
@@ -261,12 +262,16 @@ export class AnthropicAdapter implements IModelAdapter {
    * 构建请求体
    * @param messages 请求消息
    * @param responseContext 响应上下文
+   * @param provider 提供商
+   * @param model 模型
    * @param tools 工具列表（可选）
    * @returns 格式化后的请求体
    */
   buildRequestBody(
     messages: any[],
     responseContext: ModelResponseContext,
+    provider: AiModelProvider,
+    model: AiModel,
     tools?: any[]
   ): any {
     // 提取系统内容
@@ -274,7 +279,7 @@ export class AnthropicAdapter implements IModelAdapter {
     const systemContent = messages.systemContent || "";
 
     // 获取模型配置信息
-    const modelId =
+    const modelId = model?.modelId || 
       responseContext.getMetadata("modelId") || "claude-3-haiku-20240307";
     const temperature = responseContext.getMetadata("temperature") || 0.7;
     const maxTokens = responseContext.getMetadata("maxTokens") || 4096;

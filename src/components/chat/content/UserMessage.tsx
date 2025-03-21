@@ -18,9 +18,9 @@ interface UserMessageProps {
   onDelete?: () => void;
 }
 
-const UserMessage: React.FC<UserMessageProps> = ({ 
-  content, 
-  timestamp, 
+const UserMessage: React.FC<UserMessageProps> = ({
+  content,
+  timestamp,
   tokens = 0,
   onRegenerate,
   onEdit,
@@ -76,15 +76,15 @@ const UserMessage: React.FC<UserMessageProps> = ({
       }}
     >
 
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'flex-start', 
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
         flexDirection: 'row-reverse',
         '& > :first-of-type': {
           flexShrink: 0
         }
       }}>
- 
+
         <Paper
           elevation={1}
           sx={{
@@ -100,45 +100,45 @@ const UserMessage: React.FC<UserMessageProps> = ({
             }
           }}
         >
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 1,
-                  width: '100%',
-                  pb: 0.5,
-                  borderBottom: '1px dashed rgba(0, 0, 0, 0.1)'
-                }}
-              >
-        <Typography
-          variant="caption"
-          sx={{
-            color: 'text.secondary',
-            opacity: 0.6,
-            fontSize: '0.7rem',
-            textAlign: 'left'
-          }}
-        >
-          {format(new Date(timestamp), "yyyy年M月d日 aaaa HH:mm", { locale: zhCN })}
-        </Typography>
-        <Typography
-          variant="caption"
-          sx={{
-            color: 'text.secondary',
-            opacity: 0.6,
-            fontSize: '0.7rem',
-            
-            // mr: 1.5,
-            textAlign: 'right'
-          }}
-        >
-          {formatRelativeTime(timestamp)}
-        </Typography>
-      </Box>
-          <Typography 
-            sx={{ 
-              whiteSpace: 'pre-wrap', 
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 1,
+              width: '100%',
+              pb: 0.5,
+              borderBottom: '1px dashed rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                opacity: 0.6,
+                fontSize: '0.7rem',
+                textAlign: 'left'
+              }}
+            >
+              {format(new Date(timestamp), "yyyy年M月d日 aaaa HH:mm", { locale: zhCN })}
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                opacity: 0.6,
+                fontSize: '0.7rem',
+
+                // mr: 1.5,
+                textAlign: 'right'
+              }}
+            >
+              {formatRelativeTime(timestamp)}
+            </Typography>
+          </Box>
+          <Typography
+            sx={{
+              whiteSpace: 'pre-wrap',
               color: 'text.primary',
               textAlign: 'right',
               width: '100%',
@@ -160,9 +160,9 @@ const UserMessage: React.FC<UserMessageProps> = ({
           width: 'calc(100% - 48px)'
         }}
       >
-        <Box 
-          sx={{ 
-            display: 'flex', 
+        <Box
+          sx={{
+            display: 'flex',
             gap: 0.5,
             flexGrow: 1,
             '.MuiIconButton-root': {

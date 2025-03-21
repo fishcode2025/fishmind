@@ -1,6 +1,7 @@
 import { IModelAdapter } from "./IModelAdapter";
 import { IMcpTool } from "../mcpToolHandler";
 import { ModelResponseContext } from "../ModelResponseContext";
+import { AiModel, AiModelProvider } from "../../../models/chat";
 
 /**
  * Google 模型适配器
@@ -312,12 +313,16 @@ export class GoogleAdapter implements IModelAdapter {
    * 构建请求体
    * @param messages 请求消息
    * @param responseContext 响应上下文
+   * @param provider 模型提供商
+   * @param model 模型
    * @param tools 工具列表（可选）
    * @returns 格式化后的请求体
    */
   buildRequestBody(
     messages: any[],
     responseContext: ModelResponseContext,
+    provider: AiModelProvider,
+    model: AiModel,
     tools?: any[]
   ): any {
     // 获取配置信息

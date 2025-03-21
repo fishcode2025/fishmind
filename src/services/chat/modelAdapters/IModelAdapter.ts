@@ -1,5 +1,6 @@
 import { IMcpTool } from "../mcpToolHandler";
 import { ModelResponseContext } from "../ModelResponseContext";
+import { AiModel, AiModelProvider } from "../../../models/chat";
 
 /**
  * 模型适配器接口
@@ -59,12 +60,17 @@ export interface IModelAdapter {
   /**
    * 准备请求体
    * @param messages 请求消息
+   * @param responseContext 响应上下文
+   * @param provider 模型提供商
+   * @param model 模型
    * @param tools 工具列表（可选）
    * @returns 格式化后的请求体
    */
   buildRequestBody(
     messages: any[],
     responseContext: ModelResponseContext,
+    provider: AiModelProvider,
+    model: AiModel,
     tools?: any[]
   ): any;
 
