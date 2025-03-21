@@ -14,31 +14,50 @@ export class OllamaAdapter implements IModelAdapter {
    * @returns Ollama 格式的工具定义
    */
   formatTool(tool: IMcpTool): any {
+    console.log(`OllamaAdapter 格式化工具: ${tool.name}`);
+    
+    // Ollama使用与OpenAI兼容的工具格式
     if (Object.keys(tool.inputSchema.properties).length === 0) {
       return {
-        name: tool.name,
-        description: tool.description,
+        type: "function",
+        function: {
+          name: tool.name,
+          description: tool.description
+        }
       };
     }
 
+    // 构建属性对象
     const properties: any = {};
     for (const key in tool.inputSchema.properties) {
       const prop = tool.inputSchema.properties[key];
       properties[key] = {
         type: prop.type,
-        description: prop.description,
-        items: prop.items,
+        description: prop.description || "",
+        items: prop.items
       };
+      
+      // 移除undefined的属性
+      if (!properties[key].description) {
+        delete properties[key].description;
+      }
+      
+      if (!properties[key].items) {
+        delete properties[key].items;
+      }
     }
 
     return {
-      name: tool.name,
-      description: tool.description,
-      parameters: {
-        type: tool.inputSchema.type,
-        properties: properties,
-        required: tool.inputSchema.required,
-      },
+      type: "function",
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: {
+          type: "object",
+          properties: properties,
+          required: tool.inputSchema.required || []
+        }
+      }
     };
   }
 
@@ -85,13 +104,25 @@ export class OllamaAdapter implements IModelAdapter {
    * @returns 是否包含工具调用
    */
   hasToolCalls(response: any): boolean {
+    if (!response) {
+      return false;
+    }
+    
     console.log(
-      `OllamaAdapter.hasToolCalls 被调用，检查响应(完整原始数据): ${JSON.stringify(
-        response,
-        null,
-        2
-      )}`
+      `OllamaAdapter.hasToolCalls 被调用，检查响应(简化数据): ${
+        typeof response === 'object' ? JSON.stringify({
+          type: typeof response,
+          hasMessageProp: !!response.message,
+          hasToolCalls: response.tool_calls || (response.message && response.message.tool_calls),
+          hasChoices: Array.isArray(response.choices)
+        }) : response
+      }`
     );
+
+    // 检查Ollama特有的响应格式
+    if (response.message && response.message.tool_calls) {
+      return Array.isArray(response.message.tool_calls) && response.message.tool_calls.length > 0;
+    }
 
     // 标准检查：响应中包含 tool_calls 数组
     const hasStandardToolCalls =
@@ -133,18 +164,32 @@ export class OllamaAdapter implements IModelAdapter {
         response.choices[0].message.content.includes("```json") ||
         (response.choices[0].message.content.includes("{") &&
           response.choices[0].message.content.includes("}")));
+          
+    // 检查message中的content是否包含工具调用标记
+    const hasMessageContentToolCalls = 
+      response?.message?.content && 
+      (response.message.content.includes("function") ||
+       response.message.content.includes("我将使用") ||
+       response.message.content.includes("调用工具") ||
+       response.message.content.includes("I'll use") ||
+       (response.message.content.includes("{") && 
+        response.message.content.includes("}")));
 
     const result =
       hasStandardToolCalls ||
       hasDeltaToolCalls ||
       hasChoicesToolCalls ||
       hasContentToolCalls ||
-      hasChoicesContentToolCalls;
+      hasChoicesContentToolCalls ||
+      hasMessageContentToolCalls;
 
     console.log(`hasToolCalls 检查结果: ${result}`);
-    console.log(
-      `hasStandardToolCalls=${hasStandardToolCalls}, hasDeltaToolCalls=${hasDeltaToolCalls}, hasChoicesToolCalls=${hasChoicesToolCalls}, hasContentToolCalls=${hasContentToolCalls}, hasChoicesContentToolCalls=${hasChoicesContentToolCalls}`
-    );
+    
+    if (result) {
+      console.log(
+        `检测到工具调用: hasStandardToolCalls=${hasStandardToolCalls}, hasDeltaToolCalls=${hasDeltaToolCalls}, hasChoicesToolCalls=${hasChoicesToolCalls}, hasContentToolCalls=${hasContentToolCalls}, hasChoicesContentToolCalls=${hasChoicesContentToolCalls}, hasMessageContentToolCalls=${hasMessageContentToolCalls}`
+      );
+    }
 
     return result;
   }
@@ -155,13 +200,30 @@ export class OllamaAdapter implements IModelAdapter {
    * @returns 工具调用数组
    */
   extractToolCalls(response: any): any[] {
+    if (!response) {
+      return [];
+    }
+    
     console.log(
-      `OllamaAdapter.extractToolCalls 被调用，响应(完整原始数据): ${JSON.stringify(
-        response,
-        null,
-        2
-      )}`
+      `OllamaAdapter.extractToolCalls 被调用，响应类型: ${typeof response} ${
+        response ? `键: ${Object.keys(response).join(', ')}` : ''
+      }`
     );
+
+    // 处理 Ollama 特有的响应格式
+    if (response.message && response.message.tool_calls) {
+      console.log(`从 Ollama 特有格式中提取工具调用: ${response.message.tool_calls.length} 个`);
+      return this.formatToolCalls(response.message.tool_calls);
+    }
+    
+    // 尝试从 message.content 中提取
+    if (response.message && response.message.content) {
+      console.log(`尝试从 message.content 中提取工具调用`);
+      const contentTools = this.extractToolCallsFromContent(response.message.content);
+      if (contentTools.length > 0) {
+        return contentTools;
+      }
+    }
 
     // 尝试从标准位置提取工具调用
     if (response?.tool_calls && Array.isArray(response.tool_calls)) {
@@ -205,7 +267,7 @@ export class OllamaAdapter implements IModelAdapter {
       // 从内容中提取
       if (response.choices[0]?.message?.content) {
         console.log(
-          `尝试从 choices[0].message.content 中提取工具调用: ${response.choices[0].message.content}`
+          `尝试从 choices[0].message.content 中提取工具调用`
         );
         return this.extractToolCallsFromContent(
           response.choices[0].message.content
@@ -215,13 +277,13 @@ export class OllamaAdapter implements IModelAdapter {
       // 从 delta.content 中提取
       if (response.choices[0]?.delta?.content) {
         console.log(
-          `尝试从 choices[0].delta.content 中提取工具调用: ${response.choices[0].delta.content}`
+          `尝试从 choices[0].delta.content 中提取工具调用`
         );
         if (response.choices[0].delta.content === "<tool_call>") {
           console.log("检测到特殊的 <tool_call> 标记");
           return [
             {
-              id: `tool-${Date.now()}-${Math.random()
+              id: `ollama-tool-${Date.now()}-${Math.random()
                 .toString(36)
                 .substr(2, 9)}`,
               name: "create_table",
@@ -238,7 +300,7 @@ export class OllamaAdapter implements IModelAdapter {
     // 从响应内容中提取
     if (response?.content) {
       console.log(
-        `尝试从 response.content 中提取工具调用: ${response.content}`
+        `尝试从 response.content 中提取工具调用`
       );
       return this.extractToolCallsFromContent(response.content);
     }
@@ -254,15 +316,42 @@ export class OllamaAdapter implements IModelAdapter {
    * @private
    */
   private formatToolCalls(toolCalls: any[]): any[] {
+    if (!toolCalls || !Array.isArray(toolCalls)) {
+      return [];
+    }
+    
     return toolCalls
       .map((toolCall: any) => {
-        if (toolCall.type === "function") {
+        // 处理标准OpenAI格式的工具调用
+        if (toolCall.type === "function" && toolCall.function) {
+          let args = toolCall.function.arguments;
+          
+          // 尝试解析参数字符串为对象
+          if (typeof args === "string") {
+            try {
+              args = JSON.parse(args);
+            } catch (error) {
+              console.warn("无法解析工具调用参数为JSON对象:", error);
+              // 如果无法解析，保持字符串格式
+            }
+          }
+          
           return {
-            id: toolCall.id,
+            id: toolCall.id || `ollama-tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: toolCall.function.name,
-            args: toolCall.function.arguments,
+            args: args
           };
         }
+        
+        // 处理简单的工具调用格式
+        if (toolCall.name) {
+          return {
+            id: toolCall.id || `ollama-tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: toolCall.name,
+            args: toolCall.arguments || toolCall.args || {}
+          };
+        }
+        
         return null;
       })
       .filter(Boolean);
@@ -339,12 +428,12 @@ export class OllamaAdapter implements IModelAdapter {
     const payload: any = {
       model,
       messages,
-      temperature,
-      max_tokens: maxTokens,
-      stream: stream || false,
+      stream: stream !== false,
       options: {
-        num_ctx: 4096, // Ollama 默认上下文窗口大小
-      },
+        temperature,
+        num_predict: maxTokens > 0 ? maxTokens : undefined,
+        num_ctx: 4096  // Ollama 默认上下文窗口大小
+      }
     };
 
     // 添加工具
@@ -375,41 +464,83 @@ export class OllamaAdapter implements IModelAdapter {
    * @private
    */
   private extractToolCallsFromContent(content: string): any[] {
-    if (!content) return [];
+    if (!content || typeof content !== "string") return [];
 
     try {
-      // 尝试查找JSON格式的工具调用
-      const jsonMatch =
-        content.match(/```json\s*([\s\S]*?)\s*```/) ||
-        content.match(/```\s*([\s\S]*?)\s*```/) ||
-        content.match(/\{[\s\S]*?\}/);
-
-      if (jsonMatch) {
-        const jsonStr = jsonMatch[1] || jsonMatch[0];
-        const json = JSON.parse(jsonStr);
-
-        // 检查是否是工具调用格式
-        if (json.name && (json.arguments || json.args)) {
-          return [
-            {
-              id: `tool-${Date.now()}-${Math.random()
-                .toString(36)
-                .substr(2, 9)}`,
+      // 查找最外层的代码块（可能是工具调用）
+      // 1. 尝试匹配Markdown格式的JSON代码块
+      const jsonCodeBlock = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonCodeBlock && jsonCodeBlock[1]) {
+        const jsonStr = jsonCodeBlock[1].trim();
+        try {
+          const json = JSON.parse(jsonStr);
+          
+          // 检查是否是单个工具调用
+          if (json.name && (json.arguments !== undefined || json.args !== undefined)) {
+            return [{
+              id: `ollama-tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               name: json.name,
-              args: json.arguments || json.args,
-            },
-          ];
+              args: json.arguments || json.args || {}
+            }];
+          }
+          
+          // 检查是否是工具调用数组
+          if (Array.isArray(json) && json.length > 0 && json[0].name) {
+            return json.map((tool: any) => ({
+              id: tool.id || `ollama-tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              name: tool.name,
+              args: tool.arguments || tool.args || {}
+            }));
+          }
+        } catch (e) {
+          console.error("解析代码块为JSON失败:", e);
         }
-
-        // 检查工具调用数组
-        if (Array.isArray(json) && json.length > 0 && json[0].name) {
-          return json.map((tool: any) => ({
-            id:
-              tool.id ||
-              `tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            name: tool.name,
-            args: tool.arguments || tool.args || {},
-          }));
+      }
+      
+      // 2. 尝试匹配非Markdown格式的JSON对象
+      const jsonMatch = content.match(/\{\s*"name"[\s\S]*?\}/g);
+      if (jsonMatch) {
+        for (const match of jsonMatch) {
+          try {
+            const json = JSON.parse(match);
+            if (json.name) {
+              return [{
+                id: `ollama-tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                name: json.name,
+                args: json.arguments || json.args || {}
+              }];
+            }
+          } catch (e) {
+            console.error("解析JSON对象失败:", e);
+          }
+        }
+      }
+      
+      // 3. 尝试匹配功能调用模式
+      const functionCallPattern = /我将使用(\w+)工具|I'll use the (\w+) tool|使用(\w+)函数|calling (\w+)|function (\w+)/i;
+      const functionMatch = content.match(functionCallPattern);
+      if (functionMatch) {
+        // 找到第一个非空的匹配组
+        const toolName = functionMatch.slice(1).find(group => group);
+        if (toolName) {
+          // 尝试查找参数部分
+          const argsPattern = new RegExp(`参数(?:是|为)?\\s*[:：]?\\s*({[\\s\\S]*?})`);
+          const argsMatch = content.match(argsPattern) || content.match(/arguments?(?:\s+are)?:?\s*({[\s\S]*?})/i);
+          
+          let args = {};
+          if (argsMatch && argsMatch[1]) {
+            try {
+              args = JSON.parse(argsMatch[1]);
+            } catch (e) {
+              console.error("解析参数字符串失败:", e);
+            }
+          }
+          
+          return [{
+            id: `ollama-tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: toolName,
+            args
+          }];
         }
       }
     } catch (e) {
@@ -437,19 +568,71 @@ export class OllamaAdapter implements IModelAdapter {
   ): any {
     // 获取模型配置信息
     const modelId = model?.modelId || responseContext.getMetadata("modelId") || "llama2";
-    const temperature = responseContext.getMetadata("temperature") || 0.7;
-    const maxTokens = responseContext.getMetadata("maxTokens") || 2048;
-
+    const temperature = parseFloat(responseContext.getMetadata("temperature") || "0.7");
+    const maxTokens = parseInt(responseContext.getMetadata("maxTokens") || "2048");
+    
+    // Ollama特有的参数
+    const topP = parseFloat(responseContext.getMetadata("topP") || "0.9");
+    const topK = parseInt(responseContext.getMetadata("topK") || "40");
+    const repeatPenalty = parseFloat(responseContext.getMetadata("repeatPenalty") || "1.1");
+    const presencePenalty = parseFloat(responseContext.getMetadata("presencePenalty") || "0.0");
+    const frequencyPenalty = parseFloat(responseContext.getMetadata("frequencyPenalty") || "0.0");
+    const seed = parseInt(responseContext.getMetadata("seed") || "0");
+    const numCtx = parseInt(responseContext.getMetadata("numCtx") || "4096");
+    const numBatch = parseInt(responseContext.getMetadata("numBatch") || "512");
+    const format = responseContext.getMetadata("format") || "";
+    const rawPrompt = responseContext.getMetadata("raw") === "true";
+    
+    // 构建payload
     const payload: any = {
       model: modelId,
       messages,
-      temperature,
-      max_tokens: maxTokens,
       stream: true,
       options: {
-        num_ctx: 4096, // Ollama 默认上下文窗口大小
-      },
+        temperature,
+        num_ctx: numCtx,
+        num_batch: numBatch
+      }
     };
+    
+    // 只添加非默认值的参数，减少请求体大小
+    if (maxTokens > 0) {
+      payload.options.num_predict = maxTokens;
+    }
+    
+    if (topP !== 0.9) {
+      payload.options.top_p = topP;
+    }
+    
+    if (topK !== 40) {
+      payload.options.top_k = topK;
+    }
+    
+    if (repeatPenalty !== 1.1) {
+      payload.options.repeat_penalty = repeatPenalty;
+    }
+    
+    if (presencePenalty !== 0.0) {
+      payload.options.presence_penalty = presencePenalty;
+    }
+    
+    if (frequencyPenalty !== 0.0) {
+      payload.options.frequency_penalty = frequencyPenalty;
+    }
+    
+    if (seed !== 0) {
+      payload.options.seed = seed;
+    }
+    
+    // 添加格式化输出支持
+    if (format) {
+      payload.format = format;
+    }
+    
+    // 添加原始提示支持
+    if (rawPrompt) {
+      payload.raw = true;
+    }
 
     // 添加工具
     if (tools && tools.length > 0) {
@@ -472,15 +655,46 @@ export class OllamaAdapter implements IModelAdapter {
     }
 
     // 移除前缀 "data: "
-    const dataString = chunk.replace(/^data: /, "");
+    const dataString = chunk.replace(/^data: /, "").trim();
+    
+    // 检查是否是结束标记
     if (dataString === "[DONE]") {
       return { done: true };
     }
+    
+    // 跳过空数据
+    if (!dataString) {
+      return null;
+    }
 
     try {
-      return JSON.parse(dataString);
+      const parsed = JSON.parse(dataString);
+      
+      // 处理Ollama特有的响应格式
+      if (parsed.message) {
+        // 将Ollama格式转换为OpenAI格式以保持一致性
+        return {
+          choices: [
+            {
+              delta: {
+                content: parsed.message.content || "",
+                role: parsed.message.role || "assistant",
+                // 处理工具调用
+                tool_calls: parsed.message.tool_calls
+              },
+              index: 0,
+              finish_reason: parsed.done ? "stop" : null
+            }
+          ],
+          model: parsed.model || "",
+          created: Date.now(),
+          done: parsed.done || false
+        };
+      }
+      
+      return parsed;
     } catch (e) {
-      console.error("Failed to parse stream chunk", e);
+      console.error("Failed to parse stream chunk", e, "Raw chunk:", dataString);
       return null;
     }
   }
